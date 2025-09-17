@@ -2,7 +2,7 @@ class TaskModel {
   String title;
   String? description;
   int categoryId;
-  String dueDate;
+  String? dueDate;
   bool completed;
   String? imageUrl;
 
@@ -10,7 +10,7 @@ class TaskModel {
     required this.title,
     this.description,
     required this.categoryId,
-    required this.dueDate,
+    this.dueDate,
     this.completed = false,
     this.imageUrl,
   });
@@ -49,7 +49,7 @@ class TaskModel {
       title: json['title'] as String,
       description: json['description'] as String?,
       categoryId: json['category_id'] as int,
-      dueDate: json['due_date'] as String,
+      dueDate: json['due_date'] ?? " ",
       completed: json['completed'] as bool? ?? false,
       imageUrl: json['image_url'] as String?,
     );

@@ -25,6 +25,10 @@ final ThemeData appTheme = ThemeData(
     titleSmall: AppFonts.titleSmall,
     bodySmall: AppFonts.bodySmall,
     titleMedium: AppFonts.titleMedium,
+    bodyLarge: AppFonts.bodyLarge,
+    displayLarge: AppFonts.displayLarge,
+    displayMedium: AppFonts.display,
+    displaySmall: AppFonts.displaySmall,
   ),
   primaryIconTheme: IconThemeData(color: Colors.white),
   inputDecorationTheme: const InputDecorationTheme(
@@ -45,7 +49,7 @@ final ThemeData appTheme = ThemeData(
   iconTheme: const IconThemeData(color: Colors.white),
   appBarTheme: AppBarTheme(
     iconTheme: IconThemeData(color: Colors.white),
-    color: const Color(0xFF1d1d1e),
+    color: const Color.fromARGB(255, 255, 255, 255),
     elevation: 0,
     scrolledUnderElevation: 0,
   ),

@@ -26,10 +26,30 @@ class AppFonts {
     fontSize: 16,
     color: Colors.black,
   );
+  static const TextStyle bodyLarge = TextStyle(
+    fontFamily: 'Viga',
+    fontSize: 24,
+    color: Colors.black,
+  );
   static const TextStyle bodySmall = TextStyle(
     fontFamily: 'Viga',
     fontSize: 12,
     color: Colors.black,
+  );
+  static const TextStyle display = TextStyle(
+    fontFamily: 'Viga',
+    fontSize: 16,
+    color: Color.fromARGB(255, 255, 255, 255),
+  );
+  static const TextStyle displayLarge = TextStyle(
+    fontFamily: 'Viga',
+    fontSize: 24,
+    color: Color.fromARGB(255, 255, 255, 255),
+  );
+  static const TextStyle displaySmall = TextStyle(
+    fontFamily: 'Viga',
+    fontSize: 12,
+    color: Color.fromARGB(255, 255, 255, 255),
   );
 
   static const TextStyle label = TextStyle(
