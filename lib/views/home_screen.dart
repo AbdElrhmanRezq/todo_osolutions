@@ -13,41 +13,57 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int currentSelected = 0;
-  String currentType = 'all';
+  String currentType = 'All';
   final service = ApiService();
 
   List<TaskModel> tasks = [
     TaskModel(
+      id: 1,
       title: "Market Research",
       description: "Grocery shopping app design",
+      priority: "high",
       categoryId: 1,
       dueDate: "2025-05-25",
       completed: true,
-      imageUrl: null,
+      imageUrl: "https://picsum.photos/400/300?random=101&grayscale",
+      createdAt: "2025-05-20T09:00:00Z",
+      updatedAt: "2025-05-21T09:00:00Z",
     ),
     TaskModel(
+      id: 2,
       title: "Competitive Analysis",
       description: "Grocery shopping app design",
+      priority: "medium",
       categoryId: 1,
       dueDate: "2025-05-25",
       completed: false,
-      imageUrl: null,
+      imageUrl: "https://picsum.photos/400/300?random=102&grayscale",
+      createdAt: "2025-05-20T10:00:00Z",
+      updatedAt: "2025-05-21T10:00:00Z",
     ),
     TaskModel(
+      id: 3,
       title: "Create Low-fidelity Wireframe",
       description: "Uber Eats redesign challenge",
+      priority: "low",
       categoryId: 2,
       dueDate: "2025-05-25",
       completed: false,
-      imageUrl: null,
+      imageUrl: "https://picsum.photos/400/300?random=103&grayscale",
+      createdAt: "2025-05-20T11:00:00Z",
+      updatedAt: "2025-05-21T11:00:00Z",
     ),
     TaskModel(
+      id: 4,
       title: "How to pitch a Design Sprint",
       description: "About design sprint",
+      priority: "high",
       categoryId: 3,
       dueDate: "2025-05-25",
       completed: false,
-      imageUrl: null,
+      imageUrl: "https://picsum.photos/400/300?random=104&grayscale",
+      createdAt: "2025-05-20T12:00:00Z",
+      updatedAt: "2025-05-21T12:00:00Z",
     ),
   ];
 
@@ -114,7 +130,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         return Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: index == 0
-                              ? _typeCardBuilder('all', width, theme)
+                              ? _typeCardBuilder('All', width, theme)
                               : index == 1
                               ? _typeCardBuilder('Not Completed', width, theme)
                               : _typeCardBuilder('Completed', width, theme),
@@ -158,6 +174,7 @@ class _HomeScreenState extends State<HomeScreen> {
   ) {
     return Container(
       height: height * 0.12,
+      width: width * 0.6,
       decoration: BoxDecoration(
         color: theme.scaffoldBackgroundColor,
         borderRadius: BorderRadius.circular(12),
@@ -173,16 +190,75 @@ class _HomeScreenState extends State<HomeScreen> {
                 task.categoryId.toString(),
                 style: theme.textTheme.labelSmall,
               ),
-              Text(task.title, style: theme.textTheme.headlineSmall),
+              Text(
+                task.title,
+                style: theme.textTheme.headlineSmall,
+                overflow: TextOverflow.ellipsis,
+              ),
               Row(
                 children: [
                   Icon(Icons.timer, color: theme.primaryColor, size: 15),
                   SizedBox(width: 5),
-                  Text(task.dueDate ?? ' ', style: theme.textTheme.titleSmall),
+                  Text(
+                    task.dueDate ?? ' ',
+                    style: theme.textTheme.titleSmall,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ],
               ),
             ],
           ),
+        ),
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Container(
+              width: width * 0.2,
+              height: height * 0.02,
+              decoration: BoxDecoration(
+                color: task.priority == 'high'
+                    ? Color.fromARGB(255, 254, 224, 224)
+                    : task.priority == 'low'
+                    ? Color.fromARGB(255, 255, 253, 227)
+                    : Color.fromARGB(255, 227, 240, 255),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Center(
+                child: Text(
+                  task.priority ?? ' ',
+                  style: TextStyle(
+                    color: task.priority == 'high'
+                        ? Color.fromARGB(255, 254, 88, 88)
+                        : task.priority == 'low'
+                        ? Color.fromARGB(255, 252, 180, 0)
+                        : Color.fromARGB(255, 30, 135, 255),
+                    fontSize: 10,
+                  ),
+                ),
+              ),
+            ),
+            Container(
+              width: width * 0.2,
+              height: height * 0.02,
+              decoration: BoxDecoration(
+                color: task.completed == true
+                    ? Color(0xfffee9e0)
+                    : Color(0xffe3f2ff),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Center(
+                child: Text(
+                  task.completed == true ? "Completed" : "Not Completed",
+                  style: TextStyle(
+                    color: task.completed == true
+                        ? Color(0xfffe8158)
+                        : Color(0xff1e95ff),
+                    fontSize: 10,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
