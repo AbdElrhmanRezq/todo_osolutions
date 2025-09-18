@@ -1,77 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:todo_osolutions/core/services/api_service.dart';
+import 'package:todo_osolutions/models/category_model.dart';
 import 'package:todo_osolutions/models/task_model.dart';
+import 'package:todo_osolutions/providers/api_provider.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   static const String id = 'home-screen';
 
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenConsumerState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenConsumerState extends ConsumerState<HomeScreen> {
   int currentSelected = 0;
-  String currentType = 'All';
-  final service = ApiService();
-
-  List<TaskModel> tasks = [
-    TaskModel(
-      id: 1,
-      title: "Market Research",
-      description: "Grocery shopping app design",
-      priority: "high",
-      categoryId: 1,
-      dueDate: "2025-05-25",
-      completed: true,
-      imageUrl: "https://picsum.photos/400/300?random=101&grayscale",
-      createdAt: "2025-05-20T09:00:00Z",
-      updatedAt: "2025-05-21T09:00:00Z",
-    ),
-    TaskModel(
-      id: 2,
-      title: "Competitive Analysis",
-      description: "Grocery shopping app design",
-      priority: "medium",
-      categoryId: 1,
-      dueDate: "2025-05-25",
-      completed: false,
-      imageUrl: "https://picsum.photos/400/300?random=102&grayscale",
-      createdAt: "2025-05-20T10:00:00Z",
-      updatedAt: "2025-05-21T10:00:00Z",
-    ),
-    TaskModel(
-      id: 3,
-      title: "Create Low-fidelity Wireframe",
-      description: "Uber Eats redesign challenge",
-      priority: "low",
-      categoryId: 2,
-      dueDate: "2025-05-25",
-      completed: false,
-      imageUrl: "https://picsum.photos/400/300?random=103&grayscale",
-      createdAt: "2025-05-20T11:00:00Z",
-      updatedAt: "2025-05-21T11:00:00Z",
-    ),
-    TaskModel(
-      id: 4,
-      title: "How to pitch a Design Sprint",
-      description: "About design sprint",
-      priority: "high",
-      categoryId: 3,
-      dueDate: "2025-05-25",
-      completed: false,
-      imageUrl: "https://picsum.photos/400/300?random=104&grayscale",
-      createdAt: "2025-05-20T12:00:00Z",
-      updatedAt: "2025-05-21T12:00:00Z",
-    ),
-  ];
 
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     double width = MediaQuery.of(context).size.width;
     double height = MediaQuery.of(context).size.height;
+
+    String currentType = ref.watch(completedFilterProvider);
+
+    final tasksAsync = ref.watch(tasksProvider);
+    final categoriesAsync = ref.watch(categoriesProvider);
 
     return Container(
       decoration: const BoxDecoration(
@@ -130,33 +86,53 @@ class _HomeScreenState extends State<HomeScreen> {
                         return Padding(
                           padding: const EdgeInsets.all(8.0),
                           child: index == 0
-                              ? _typeCardBuilder('All', width, theme)
+                              ? _typeCardBuilder('', width, theme, ref)
                               : index == 1
-                              ? _typeCardBuilder('Not Completed', width, theme)
-                              : _typeCardBuilder('Completed', width, theme),
+                              ? _typeCardBuilder('false', width, theme, ref)
+                              : _typeCardBuilder('true', width, theme, ref),
                         );
                       },
                     ),
                   ),
                 ),
-                Expanded(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: height * .005),
-                    child: ListView.builder(
-                      itemCount: tasks.length,
-                      itemBuilder: (context, index) {
-                        return Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: _taskCardBuilder(
-                            tasks[index],
-                            height,
-                            width,
-                            theme,
-                          ),
-                        );
-                      },
-                    ),
-                  ),
+                tasksAsync.when(
+                  data: (tasks) {
+                    return Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: height * .005),
+                        child: ListView.builder(
+                          itemCount: tasks.length,
+                          itemBuilder: (context, index) {
+                            return categoriesAsync.when(
+                              data: (categories) {
+                                return Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: _taskCardBuilder(
+                                    tasks[index],
+                                    height,
+                                    width,
+                                    theme,
+                                    categories,
+                                  ),
+                                );
+                              },
+                              error: (error, stackTrace) => Center(
+                                child: Text(
+                                  "Something went wrong: $error",
+                                  style: theme.textTheme.bodyMedium,
+                                ),
+                              ),
+                              loading: () =>
+                                  Center(child: CircularProgressIndicator()),
+                            );
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                  error: (error, stackTrace) =>
+                      Center(child: Text("Something went wrong: $error")),
+                  loading: () => Center(child: CircularProgressIndicator()),
                 ),
               ],
             ),
@@ -171,7 +147,9 @@ class _HomeScreenState extends State<HomeScreen> {
     double height,
     double width,
     ThemeData theme,
+    List<CategoryModel> categories,
   ) {
+    final catIconUrl = categories[task.categoryId - 1].iconUrl.split('?')[0];
     return Container(
       height: height * 0.12,
       width: width * 0.6,
@@ -186,9 +164,19 @@ class _HomeScreenState extends State<HomeScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                task.categoryId.toString(),
-                style: theme.textTheme.labelSmall,
+              Row(
+                children: [
+                  Container(
+                    width: width * 0.035,
+                    height: height * 0.035,
+                    child: SvgPicture.network(catIconUrl),
+                  ),
+                  SizedBox(width: width * 0.02),
+                  Text(
+                    categories[task.categoryId - 1].name,
+                    style: theme.textTheme.labelSmall,
+                  ),
+                ],
               ),
               Text(
                 task.title,
@@ -225,7 +213,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               child: Center(
                 child: Text(
-                  task.priority ?? ' ',
+                  task.priority?.toUpperCase() ?? ' ',
                   style: TextStyle(
                     color: task.priority == 'high'
                         ? Color.fromARGB(255, 254, 88, 88)
@@ -264,16 +252,22 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _typeCardBuilder(String type, double width, ThemeData theme) {
+  Widget _typeCardBuilder(
+    String type,
+    double width,
+    ThemeData theme,
+    WidgetRef ref,
+  ) {
     return GestureDetector(
       onTap: () {
-        setState(() {
-          currentType = type;
-        });
+        ref.watch(completedFilterProvider.notifier).state = type;
+        ref.invalidate(tasksProvider);
       },
       child: Container(
         decoration: BoxDecoration(
-          color: currentType == type ? theme.primaryColor : Color(0xffece8fe),
+          color: ref.watch(completedFilterProvider) == type
+              ? theme.primaryColor
+              : Color(0xffece8fe),
           borderRadius: BorderRadius.circular(12),
         ),
         width: width * 0.25,
@@ -281,8 +275,12 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             Text(
-              type,
-              style: currentType == type
+              type == ''
+                  ? "All"
+                  : type == 'true'
+                  ? "Completed"
+                  : "Not completed",
+              style: ref.watch(completedFilterProvider) == type
                   ? theme.textTheme.displaySmall
                   : theme.textTheme.titleSmall,
             ),
