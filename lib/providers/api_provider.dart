@@ -17,7 +17,10 @@ final tasksProvider = FutureProvider<List<TaskModel>>((ref) async {
   final service = ref.watch(apiServiceProvider);
   List<String> filters = [];
   filters.add(ref.watch(limitFilterProvider));
-  filters.add(ref.watch(offsetFilterProvider));
+  final rawOffset = int.parse(ref.watch(offsetFilterProvider));
+  final rawLimit = int.parse(ref.watch(limitFilterProvider));
+  String offset = (rawLimit * rawOffset).toString();
+  filters.add(offset);
   filters.add(ref.watch(categoryFilterProvider));
   filters.add(ref.watch(completedFilterProvider));
   filters.add(ref.watch(priorityFilterProvider));

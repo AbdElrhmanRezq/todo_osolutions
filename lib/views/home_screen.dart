@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:todo_osolutions/core/services/api_service.dart';
 import 'package:todo_osolutions/models/category_model.dart';
 import 'package:todo_osolutions/models/task_model.dart';
 import 'package:todo_osolutions/providers/api_provider.dart';
@@ -28,6 +27,8 @@ class _HomeScreenConsumerState extends ConsumerState<HomeScreen> {
 
     final tasksAsync = ref.watch(tasksProvider);
     final categoriesAsync = ref.watch(categoriesProvider);
+
+    int taskCount = 0;
 
     return Container(
       decoration: const BoxDecoration(
@@ -101,8 +102,10 @@ class _HomeScreenConsumerState extends ConsumerState<HomeScreen> {
                                         style: theme.textTheme.bodyMedium,
                                       ),
                                     ),
-                                    loading: () => Center(
-                                      child: CircularProgressIndicator(),
+                                    loading: () => Expanded(
+                                      child: Center(
+                                        child: CircularProgressIndicator(),
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -113,6 +116,7 @@ class _HomeScreenConsumerState extends ConsumerState<HomeScreen> {
                 ),
                 tasksAsync.when(
                   data: (tasks) {
+                    taskCount = tasks.length;
                     return Expanded(
                       child: Padding(
                         padding: EdgeInsets.symmetric(vertical: height * .005),
@@ -138,8 +142,11 @@ class _HomeScreenConsumerState extends ConsumerState<HomeScreen> {
                                   style: theme.textTheme.bodyMedium,
                                 ),
                               ),
-                              loading: () =>
-                                  Center(child: CircularProgressIndicator()),
+                              loading: () => Expanded(
+                                child: Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                              ),
                             );
                           },
                         ),
@@ -148,7 +155,47 @@ class _HomeScreenConsumerState extends ConsumerState<HomeScreen> {
                   },
                   error: (error, stackTrace) =>
                       Center(child: Text("Something went wrong: $error")),
-                  loading: () => Center(child: CircularProgressIndicator()),
+                  loading: () => Expanded(
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                        if (ref.watch((offsetFilterProvider)) != '0') {
+                          ref.read(offsetFilterProvider.notifier).state =
+                              (int.parse(ref.watch((offsetFilterProvider))) - 1)
+                                  .toString();
+                        }
+                      },
+                      icon: Icon(Icons.arrow_back, color: theme.primaryColor),
+                    ),
+                    Text(
+                      (int.parse(ref.watch((offsetFilterProvider))) + 1)
+                          .toString(),
+                      style: theme.textTheme.titleMedium,
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        if (taskCount ==
+                            int.parse(ref.watch(limitFilterProvider))) {
+                          ref.read(offsetFilterProvider.notifier).state =
+                              (int.parse(ref.watch((offsetFilterProvider))) + 1)
+                                  .toString();
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('No More tasks')),
+                          );
+                        }
+                      },
+                      icon: Icon(
+                        Icons.arrow_forward,
+                        color: theme.primaryColor,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -414,7 +461,9 @@ class _HomeScreenConsumerState extends ConsumerState<HomeScreen> {
     ThemeData theme,
     List<CategoryModel> categories,
   ) {
-    showBottomSheet(
+    showModalBottomSheet(
+      isDismissible: true,
+      enableDrag: true,
       context: context,
       builder: (context) {
         return Container(
