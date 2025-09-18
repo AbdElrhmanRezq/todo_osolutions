@@ -20,6 +20,7 @@ class ToDo extends StatelessWidget {
       initialRoute: HomeScreen.id,
       theme: appTheme,
       title: "ToDo",
+      debugShowCheckedModeBanner: false,
       routes: {
         HomeScreen.id: (context) => HomeScreen(),
         DetailsScreen.id: (context) => DetailsScreen(),

@@ -54,25 +54,7 @@ class _HomeScreenConsumerState extends ConsumerState<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Center(
-                  child: Text("ToDo", style: theme.textTheme.headlineMedium),
-                ),
-                Padding(
-                  padding: EdgeInsets.symmetric(vertical: height * .015),
-                  child: Container(
-                    height: height * 0.13,
-                    child: ListView.builder(
-                      itemCount: 8,
-                      scrollDirection: Axis.horizontal,
-                      itemBuilder: (context, index) {
-                        return Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: index == 0
-                              ? _allCardBuilder(index, width, theme)
-                              : _dateCardBuilder(index, width, theme),
-                        );
-                      },
-                    ),
-                  ),
+                  child: Text("Tasks", style: theme.textTheme.headlineMedium),
                 ),
                 Padding(
                   padding: EdgeInsets.symmetric(vertical: height * .005),
@@ -80,16 +62,50 @@ class _HomeScreenConsumerState extends ConsumerState<HomeScreen> {
                   child: Container(
                     height: height * 0.05,
                     child: ListView.builder(
-                      itemCount: 3,
+                      itemCount: 4,
                       scrollDirection: Axis.horizontal,
                       itemBuilder: (context, index) {
                         return Padding(
-                          padding: const EdgeInsets.all(8.0),
+                          padding: const EdgeInsets.all(5.0),
                           child: index == 0
                               ? _typeCardBuilder('', width, theme, ref)
                               : index == 1
                               ? _typeCardBuilder('false', width, theme, ref)
-                              : _typeCardBuilder('true', width, theme, ref),
+                              : index == 2
+                              ? _typeCardBuilder('true', width, theme, ref)
+                              : Container(
+                                  decoration: BoxDecoration(
+                                    color: Color(0xffece8fe),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: categoriesAsync.when(
+                                    data: (categories) => IconButton(
+                                      onPressed: () {
+                                        _showButtomSheet(
+                                          context,
+                                          width,
+                                          height,
+                                          ref,
+                                          theme,
+                                          categories,
+                                        );
+                                      },
+                                      icon: Icon(
+                                        Icons.filter_alt_rounded,
+                                        color: theme.primaryColor,
+                                      ),
+                                    ),
+                                    error: (error, stackTrace) => Center(
+                                      child: Text(
+                                        "Something went wrong: $error",
+                                        style: theme.textTheme.bodyMedium,
+                                      ),
+                                    ),
+                                    loading: () => Center(
+                                      child: CircularProgressIndicator(),
+                                    ),
+                                  ),
+                                ),
                         );
                       },
                     ),
@@ -149,7 +165,11 @@ class _HomeScreenConsumerState extends ConsumerState<HomeScreen> {
     ThemeData theme,
     List<CategoryModel> categories,
   ) {
-    final catIconUrl = categories[task.categoryId - 1].iconUrl.split('?')[0];
+    final cat = categories.firstWhere(
+      (element) => element.id == task.categoryId,
+    );
+
+    final catIconUrl = cat.iconUrl.split('?')[0];
     return Container(
       height: height * 0.12,
       width: width * 0.6,
@@ -172,10 +192,7 @@ class _HomeScreenConsumerState extends ConsumerState<HomeScreen> {
                     child: SvgPicture.network(catIconUrl),
                   ),
                   SizedBox(width: width * 0.02),
-                  Text(
-                    categories[task.categoryId - 1].name,
-                    style: theme.textTheme.labelSmall,
-                  ),
+                  Text(cat.name, style: theme.textTheme.labelSmall),
                 ],
               ),
               Text(
@@ -384,6 +401,195 @@ class _HomeScreenConsumerState extends ConsumerState<HomeScreen> {
                   : theme.textTheme.displaySmall,
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  _showButtomSheet(
+    BuildContext context,
+    double width,
+    double height,
+    WidgetRef ref,
+    ThemeData theme,
+    List<CategoryModel> categories,
+  ) {
+    showBottomSheet(
+      context: context,
+      builder: (context) {
+        return Container(
+          height: height * 0.4,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(12),
+              topRight: Radius.circular(12),
+            ),
+          ),
+          child: ListView(
+            children: [
+              SizedBox(height: height * 0.01),
+
+              Divider(
+                color: Colors.grey,
+                radius: BorderRadius.circular(12),
+                endIndent: width * 0.35,
+                indent: width * 0.35,
+                thickness: 4,
+              ),
+              SizedBox(height: height * 0.01),
+              Center(
+                child: Text("Filters", style: theme.textTheme.headlineMedium),
+              ),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: width * 0.05),
+                child: Text("Priority"),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Container(
+                  height: height * 0.05,
+                  child: ListView.builder(
+                    itemCount: 4,
+                    scrollDirection: Axis.horizontal,
+                    itemBuilder: (context, index) {
+                      List<String> prios = ['low', 'medium', 'high'];
+                      return index == 0
+                          ? _priorityCardBuilder('', width, theme, ref)
+                          : _priorityCardBuilder(
+                              prios[index - 1],
+                              width,
+                              theme,
+                              ref,
+                            );
+                    },
+                  ),
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: width * 0.05),
+                child: Text("Date order"),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Container(
+                  height: height * 0.05,
+                  child: ListView.builder(
+                    itemCount: 2,
+                    scrollDirection: Axis.horizontal,
+                    itemBuilder: (context, index) {
+                      List<String> orders = ['desc', 'asc'];
+                      return Padding(
+                        padding: const EdgeInsets.all(4.0),
+                        child: GestureDetector(
+                          onTap: () {
+                            index == 0
+                                ? ref.read(orderFilterProvider.notifier).state =
+                                      'desc'
+                                : ref.read(orderFilterProvider.notifier).state =
+                                      'asc';
+                            ref.invalidate(tasksProvider);
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color:
+                                  ref.watch(orderFilterProvider) ==
+                                      orders[index]
+                                  ? theme.primaryColor
+                                  : Color(0xffece8fe),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            width: width * 0.2,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                Text(
+                                  orders[index],
+                                  style:
+                                      ref.watch(orderFilterProvider) ==
+                                          orders[index]
+                                      ? theme.textTheme.displaySmall
+                                      : theme.textTheme.titleSmall,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: width * 0.05),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text("Date order"),
+                    DropdownButton<CategoryModel>(
+                      dropdownColor: Colors.white,
+                      items: categories.map(_buildMenuItems).toList(),
+                      value: categories.firstWhere(
+                        (element) =>
+                            element.id.toString() ==
+                            ref.watch(categoryFilterProvider),
+                        orElse: () =>
+                            categories.first, // fallback to avoid crash
+                      ),
+                      onChanged: (value) {
+                        if (value != null) {
+                          ref.read(categoryFilterProvider.notifier).state =
+                              (value.id).toString();
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  DropdownMenuItem<CategoryModel> _buildMenuItems(CategoryModel category) =>
+      DropdownMenuItem<CategoryModel>(
+        value: category,
+        child: Text(category.name),
+      );
+
+  Widget _priorityCardBuilder(
+    String priority,
+    double width,
+    ThemeData theme,
+    WidgetRef ref,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.all(4.0),
+      child: GestureDetector(
+        onTap: () {
+          ref.read(priorityFilterProvider.notifier).state = priority;
+          ref.invalidate(tasksProvider);
+        },
+        child: Container(
+          decoration: BoxDecoration(
+            color: ref.watch(priorityFilterProvider) == priority
+                ? theme.primaryColor
+                : Color(0xffece8fe),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          width: width * 0.2,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              Text(
+                priority == '' ? "All" : priority,
+                style: ref.watch(priorityFilterProvider) == priority
+                    ? theme.textTheme.displaySmall
+                    : theme.textTheme.titleSmall,
+              ),
+            ],
+          ),
         ),
       ),
     );

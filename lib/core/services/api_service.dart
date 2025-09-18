@@ -18,10 +18,16 @@ class ApiService {
       "category_id=eq.",
       "completed=eq.",
       "priority=eq.",
+      "order=created_at.",
     ];
     for (int i = 0; i < filters.length; i++) {
       if (filters[i] != '') {
         filter = filter + filtersPref[i] + filters[i];
+      }
+      if (i != filters.length - 1) {
+        if (filters[i + 1] != '' && filter != '') {
+          filter += '&';
+        }
       }
     }
     final url = Uri.parse('https://$projectId.$baseUrl/tasks?$filter');
