@@ -66,6 +66,8 @@ flutter:
   assets:
     - .env
     - assets/images/
+    - assets/images/fire.png
+
   
 
   # An image asset can refer to one or more resolution-specific "variants", see

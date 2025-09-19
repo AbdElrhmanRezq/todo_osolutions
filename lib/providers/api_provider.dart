@@ -33,3 +33,12 @@ final categoriesProvider = FutureProvider<List<CategoryModel>>((ref) async {
 
   return await service.getCategories();
 });
+
+final singleTaskProvider = FutureProvider.family<TaskModel, String>((
+  ref,
+  String id,
+) async {
+  final service = ref.watch(apiServiceProvider);
+
+  return await service.getSingleTask(id);
+});

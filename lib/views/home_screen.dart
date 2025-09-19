@@ -15,7 +15,7 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenConsumerState extends ConsumerState<HomeScreen> {
-  int currentSelected = 0;
+  //int currentSelected = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -23,12 +23,15 @@ class _HomeScreenConsumerState extends ConsumerState<HomeScreen> {
     double width = MediaQuery.of(context).size.width;
     double height = MediaQuery.of(context).size.height;
 
-    String currentType = ref.watch(completedFilterProvider);
-
     final tasksAsync = ref.watch(tasksProvider);
     final categoriesAsync = ref.watch(categoriesProvider);
 
     int taskCount = 0;
+
+    Future<void> _refresh() async {
+      ref.invalidate(tasksProvider);
+      await Future.delayed(const Duration(milliseconds: 500));
+    }
 
     return Container(
       decoration: const BoxDecoration(
@@ -120,35 +123,39 @@ class _HomeScreenConsumerState extends ConsumerState<HomeScreen> {
                     return Expanded(
                       child: Padding(
                         padding: EdgeInsets.symmetric(vertical: height * .005),
-                        child: ListView.builder(
-                          itemCount: tasks.length,
-                          itemBuilder: (context, index) {
-                            return categoriesAsync.when(
-                              data: (categories) {
-                                return Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: _taskCardBuilder(
-                                    tasks[index],
-                                    height,
-                                    width,
-                                    theme,
-                                    categories,
+                        child: RefreshIndicator(
+                          onRefresh: _refresh,
+                          backgroundColor: Colors.white,
+                          child: ListView.builder(
+                            itemCount: tasks.length,
+                            itemBuilder: (context, index) {
+                              return categoriesAsync.when(
+                                data: (categories) {
+                                  return Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: _taskCardBuilder(
+                                      tasks[index],
+                                      height,
+                                      width,
+                                      theme,
+                                      categories,
+                                    ),
+                                  );
+                                },
+                                error: (error, stackTrace) => Center(
+                                  child: Text(
+                                    "Something went wrong: $error",
+                                    style: theme.textTheme.bodyMedium,
                                   ),
-                                );
-                              },
-                              error: (error, stackTrace) => Center(
-                                child: Text(
-                                  "Something went wrong: $error",
-                                  style: theme.textTheme.bodyMedium,
                                 ),
-                              ),
-                              loading: () => Expanded(
-                                child: Center(
-                                  child: CircularProgressIndicator(),
+                                loading: () => Expanded(
+                                  child: Center(
+                                    child: CircularProgressIndicator(),
+                                  ),
                                 ),
-                              ),
-                            );
-                          },
+                              );
+                            },
+                          ),
                         ),
                       ),
                     );
@@ -217,37 +224,110 @@ class _HomeScreenConsumerState extends ConsumerState<HomeScreen> {
     );
 
     final catIconUrl = cat.iconUrl.split('?')[0];
-    return Container(
-      height: height * 0.12,
-      width: width * 0.6,
-      decoration: BoxDecoration(
-        color: theme.scaffoldBackgroundColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: ListTile(
-        title: Padding(
-          padding: EdgeInsets.symmetric(vertical: height * .015),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).pushNamed(
+          'details-screen',
+          arguments: {'task': task, 'category': cat, 'catIconUrl': catIconUrl},
+        );
+      },
+      child: Container(
+        height: height * 0.12,
+        width: width * 0.6,
+        decoration: BoxDecoration(
+          color: theme.scaffoldBackgroundColor,
+          borderRadius: BorderRadius.circular(12),
+          image: DecorationImage(
+            image: NetworkImage(task.imageUrl ?? ' '),
+            alignment: AlignmentDirectional(1.2, 0),
+            opacity: 0.6,
+            fit: BoxFit.contain,
+          ),
+        ),
+        child: Stack(
+          children: [
+            ListTile(
+              title: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: width * 0.035,
-                    height: height * 0.035,
-                    child: SvgPicture.network(catIconUrl),
+                  Row(
+                    children: [
+                      Container(
+                        width: width * 0.035,
+                        height: height * 0.025,
+                        child: SvgPicture.network(catIconUrl),
+                      ),
+                      SizedBox(width: width * 0.02),
+                      Text(cat.name, style: theme.textTheme.labelSmall),
+                    ],
                   ),
-                  SizedBox(width: width * 0.02),
-                  Text(cat.name, style: theme.textTheme.labelSmall),
+                  Expanded(
+                    child: Text(
+                      task.title,
+                      style: theme.textTheme.headlineSmall,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ],
               ),
-              Text(
-                task.title,
-                style: theme.textTheme.headlineSmall,
-                overflow: TextOverflow.ellipsis,
+
+              trailing: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    width: width * 0.2,
+                    height: height * 0.02,
+                    decoration: BoxDecoration(
+                      color: task.priority == 'high'
+                          ? Color.fromARGB(255, 254, 224, 224)
+                          : task.priority == 'low'
+                          ? Color.fromARGB(255, 255, 253, 227)
+                          : Color.fromARGB(255, 227, 240, 255),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Center(
+                      child: Text(
+                        task.priority?.toUpperCase() ?? ' ',
+                        style: TextStyle(
+                          color: task.priority == 'high'
+                              ? Color.fromARGB(255, 254, 88, 88)
+                              : task.priority == 'low'
+                              ? Color.fromARGB(255, 252, 180, 0)
+                              : Color.fromARGB(255, 30, 135, 255),
+                          fontSize: 10,
+                        ),
+                      ),
+                    ),
+                  ),
+                  Container(
+                    width: width * 0.2,
+                    height: height * 0.02,
+                    decoration: BoxDecoration(
+                      color: task.completed == true
+                          ? Color(0xfffee9e0)
+                          : Color(0xffe3f2ff),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Center(
+                      child: Text(
+                        task.completed == true ? "Completed" : "Not Completed",
+                        style: TextStyle(
+                          color: task.completed == true
+                              ? Color(0xfffe8158)
+                              : Color(0xff1e95ff),
+                          fontSize: 10,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              Row(
+            ),
+            Positioned(
+              bottom: height * 0.015,
+              left: width * 0.04,
+              child: Row(
                 children: [
                   Icon(Icons.timer, color: theme.primaryColor, size: 15),
                   SizedBox(width: 5),
@@ -257,57 +337,6 @@ class _HomeScreenConsumerState extends ConsumerState<HomeScreen> {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
-              ),
-            ],
-          ),
-        ),
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Container(
-              width: width * 0.2,
-              height: height * 0.02,
-              decoration: BoxDecoration(
-                color: task.priority == 'high'
-                    ? Color.fromARGB(255, 254, 224, 224)
-                    : task.priority == 'low'
-                    ? Color.fromARGB(255, 255, 253, 227)
-                    : Color.fromARGB(255, 227, 240, 255),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Center(
-                child: Text(
-                  task.priority?.toUpperCase() ?? ' ',
-                  style: TextStyle(
-                    color: task.priority == 'high'
-                        ? Color.fromARGB(255, 254, 88, 88)
-                        : task.priority == 'low'
-                        ? Color.fromARGB(255, 252, 180, 0)
-                        : Color.fromARGB(255, 30, 135, 255),
-                    fontSize: 10,
-                  ),
-                ),
-              ),
-            ),
-            Container(
-              width: width * 0.2,
-              height: height * 0.02,
-              decoration: BoxDecoration(
-                color: task.completed == true
-                    ? Color(0xfffee9e0)
-                    : Color(0xffe3f2ff),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Center(
-                child: Text(
-                  task.completed == true ? "Completed" : "Not Completed",
-                  style: TextStyle(
-                    color: task.completed == true
-                        ? Color(0xfffe8158)
-                        : Color(0xff1e95ff),
-                    fontSize: 10,
-                  ),
-                ),
               ),
             ),
           ],
@@ -354,104 +383,104 @@ class _HomeScreenConsumerState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _allCardBuilder(int index, double width, ThemeData theme) {
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          currentSelected = index;
-        });
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: currentSelected == index
-              ? theme.primaryColor
-              : theme.scaffoldBackgroundColor,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        width: width * 0.17,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            Text(
-              "All",
-              style: currentSelected != index
-                  ? theme.textTheme.bodyLarge
-                  : theme.textTheme.displayLarge,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // Widget _allCardBuilder(int index, double width, ThemeData theme) {
+  //   return GestureDetector(
+  //     onTap: () {
+  //       setState(() {
+  //         currentSelected = index;
+  //       });
+  //     },
+  //     child: Container(
+  //       decoration: BoxDecoration(
+  //         color: currentSelected == index
+  //             ? theme.primaryColor
+  //             : theme.scaffoldBackgroundColor,
+  //         borderRadius: BorderRadius.circular(12),
+  //       ),
+  //       width: width * 0.17,
+  //       child: Column(
+  //         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+  //         children: [
+  //           Text(
+  //             "All",
+  //             style: currentSelected != index
+  //                 ? theme.textTheme.bodyLarge
+  //                 : theme.textTheme.displayLarge,
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 
-  Widget _dateCardBuilder(int index, double width, ThemeData theme) {
-    List months = [
-      'jan',
-      'feb',
-      'mar',
-      'april',
-      'may',
-      'jun',
-      'july',
-      'aug',
-      'sep',
-      'oct',
-      'nov',
-      'dec',
-    ];
-    List<String> weekdays = [
-      "Monday",
-      "Tuesday",
-      "Wednesday",
-      "Thursday",
-      "Friday",
-      "Saturday",
-      "Sunday",
-    ];
-    final DateTime date = DateTime.now().add(Duration(days: index - 1));
-    final String month = months[date.month - 1];
-    final int day = date.day;
-    final String weekday = weekdays[date.weekday - 1].substring(0, 3);
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          currentSelected = index;
-        });
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          color: currentSelected == index
-              ? theme.primaryColor
-              : theme.scaffoldBackgroundColor,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        width: width * 0.17,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            Text(
-              month,
-              style: currentSelected != index
-                  ? theme.textTheme.bodyMedium
-                  : theme.textTheme.displayMedium,
-            ),
-            Text(
-              day.toString(),
-              style: currentSelected != index
-                  ? theme.textTheme.bodyLarge
-                  : theme.textTheme.displayLarge,
-            ),
-            Text(
-              weekday.toString(),
-              style: currentSelected != index
-                  ? theme.textTheme.bodySmall
-                  : theme.textTheme.displaySmall,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // Widget _dateCardBuilder(int index, double width, ThemeData theme) {
+  //   List months = [
+  //     'jan',
+  //     'feb',
+  //     'mar',
+  //     'april',
+  //     'may',
+  //     'jun',
+  //     'july',
+  //     'aug',
+  //     'sep',
+  //     'oct',
+  //     'nov',
+  //     'dec',
+  //   ];
+  //   List<String> weekdays = [
+  //     "Monday",
+  //     "Tuesday",
+  //     "Wednesday",
+  //     "Thursday",
+  //     "Friday",
+  //     "Saturday",
+  //     "Sunday",
+  //   ];
+  //   final DateTime date = DateTime.now().add(Duration(days: index - 1));
+  //   final String month = months[date.month - 1];
+  //   final int day = date.day;
+  //   final String weekday = weekdays[date.weekday - 1].substring(0, 3);
+  //   return GestureDetector(
+  //     onTap: () {
+  //       setState(() {
+  //         currentSelected = index;
+  //       });
+  //     },
+  //     child: Container(
+  //       decoration: BoxDecoration(
+  //         color: currentSelected == index
+  //             ? theme.primaryColor
+  //             : theme.scaffoldBackgroundColor,
+  //         borderRadius: BorderRadius.circular(12),
+  //       ),
+  //       width: width * 0.17,
+  //       child: Column(
+  //         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+  //         children: [
+  //           Text(
+  //             month,
+  //             style: currentSelected != index
+  //                 ? theme.textTheme.bodyMedium
+  //                 : theme.textTheme.displayMedium,
+  //           ),
+  //           Text(_
+  //             day.toString(),
+  //             style: currentSelected != index
+  //                 ? theme.textTheme.bodyLarge
+  //                 : theme.textTheme.displayLarge,
+  //           ),
+  //           Text(
+  //             weekday.toString(),
+  //             style: currentSelected != index
+  //                 ? theme.textTheme.bodySmall
+  //                 : theme.textTheme.displaySmall,
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
 
   _showButtomSheet(
     BuildContext context,
@@ -481,8 +510,8 @@ class _HomeScreenConsumerState extends ConsumerState<HomeScreen> {
               Divider(
                 color: Colors.grey,
                 radius: BorderRadius.circular(12),
-                endIndent: width * 0.35,
-                indent: width * 0.35,
+                endIndent: width * 0.4,
+                indent: width * 0.4,
                 thickness: 4,
               ),
               SizedBox(height: height * 0.01),
@@ -537,6 +566,7 @@ class _HomeScreenConsumerState extends ConsumerState<HomeScreen> {
                                 : ref.read(orderFilterProvider.notifier).state =
                                       'asc';
                             ref.invalidate(tasksProvider);
+                            Navigator.of(context).pop();
                           },
                           child: Container(
                             decoration: BoxDecoration(
@@ -573,7 +603,7 @@ class _HomeScreenConsumerState extends ConsumerState<HomeScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text("Date order"),
+                    Text("Category"),
                     DropdownButton<CategoryModel>(
                       dropdownColor: Colors.white,
                       items: categories.map(_buildMenuItems).toList(),
@@ -588,6 +618,7 @@ class _HomeScreenConsumerState extends ConsumerState<HomeScreen> {
                         if (value != null) {
                           ref.read(categoryFilterProvider.notifier).state =
                               (value.id).toString();
+                          Navigator.of(context).pop();
                         }
                       },
                     ),
@@ -619,6 +650,7 @@ class _HomeScreenConsumerState extends ConsumerState<HomeScreen> {
         onTap: () {
           ref.read(priorityFilterProvider.notifier).state = priority;
           ref.invalidate(tasksProvider);
+          Navigator.of(context).pop();
         },
         child: Container(
           decoration: BoxDecoration(

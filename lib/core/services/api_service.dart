@@ -71,7 +71,90 @@ class ApiService {
       final List<dynamic> data = jsonDecode(response.body);
       return data.map((e) => CategoryModel.fromJson(e)).toList();
     } else {
+      throw Exception('Failed to load categories');
+    }
+  }
+
+  Future<TaskModel> getSingleTask(String taskId) async {
+    final url = Uri.parse('https://$projectId.$baseUrl/tasks?id=eq.$taskId');
+
+    final response = await http.get(
+      url,
+      headers: {
+        'Authorization': 'Bearer $anonKey',
+        'apikey': anonKey,
+        "Content-Type": "application/json",
+        "Prefer": "return=representation",
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+
+      return data.map((e) => TaskModel.fromJson(e)).toList()[0];
+    } else {
       throw Exception('Failed to load tasks');
+    }
+  }
+
+  Future<List<TaskModel>> editTask(TaskModel task) async {
+    try {
+      final url = Uri.parse(
+        'https://$projectId.$baseUrl/tasks?id=eq.${task.id}',
+      );
+
+      final response = await http.patch(
+        url,
+        headers: {
+          'Authorization': 'Bearer $anonKey',
+          'apikey': anonKey,
+          "Content-Type": "application/json",
+          "Prefer": "return=representation",
+        },
+        body: jsonEncode({
+          "title": task.title,
+          "description": task.description,
+          "priority": task.priority,
+          "due_date": task.dueDate,
+          "completed": task.completed,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((e) => TaskModel.fromJson(e)).toList();
+      } else {
+        throw Exception('Failed to update tasks');
+      }
+    } catch (e) {
+      throw Exception('Failed to update tasks: $e');
+    }
+  }
+
+  Future<List<TaskModel>> deleteTask(TaskModel task) async {
+    try {
+      final url = Uri.parse(
+        'https://$projectId.$baseUrl/tasks?id=eq.${task.id}',
+      );
+
+      final response = await http.delete(
+        url,
+        headers: {
+          'Authorization': 'Bearer $anonKey',
+          'apikey': anonKey,
+          "Content-Type": "application/json",
+          "Prefer": "return=representation",
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((e) => TaskModel.fromJson(e)).toList();
+      } else {
+        throw Exception('Failed to update tasks');
+      }
+    } catch (e) {
+      throw Exception('Failed to update tasks: $e');
     }
   }
 }
