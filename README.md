@@ -2,6 +2,7 @@
 
 A **task management app** built with **Flutter** that allows users to manage tasks, filter them by different attributes (category, completion, priority, etc.), and view details. The app is structured with **Riverpod** for state management and clean integration with a custom **API service**.  
 
+![App Screenshot](image.png)
 ---
 
 ## 🚀 Tech Stack  
