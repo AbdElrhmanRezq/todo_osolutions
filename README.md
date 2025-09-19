@@ -34,6 +34,9 @@ lib/
 │── core/
 │   └── services/
 │       └── api_service.dart        # Handles REST API requests
+│   └── theme/
+│       └── app_fonts.dart   
+│       └── app_theme.dart        
 │
 │── models/
 │   ├── task_model.dart             # Task entity
@@ -89,7 +92,6 @@ Defined in **`api_provider.dart`**:
 
 - **Scoped Providers** → Each screen can watch exactly the data it needs.  
 - **Async Handling** → `FutureProvider` simplifies loading/error states.  
-- **Testability** → Providers can be easily mocked in unit tests.  
 - **Reactivity** → Changing filters instantly updates the task list.  
 
 ---
@@ -107,7 +109,9 @@ Defined in **`api_provider.dart`**:
    flutter pub get
    ```
 
-3. **Run the app**  
+3. **Create .env file and put your projectId and AnonKey**
+
+4. **Run the app**  
    ```bash
    flutter run
    ```
